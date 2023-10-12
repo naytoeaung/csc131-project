@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase 9</title>
+  <style>
+    #main
+    {
+        width: 100%;
+        height:100%;
+       display: flex;
+       justify-content: space-between;
+    }
+    .form-container
+    {   
+        border: 1px solid transparent;
+        width:200px;
+        height:280px;
+        margin: 0px 10px;
+        position: relative;
+        display:inline-block;
+        flex: 1;
+    }
+    .pcba-label
+    {
+        width:200px;
+        height:30px;
+        margin: 0px;
+        padding:0px;
+        text-align: center;
+        vertical-align: middle;
+        border: 2px solid gray;
+        border-bottom: 2px solid transparent;
+    }
+    img{
+        width:200px;
+        height:200px;
+        vertical-align: middle;
+
+        margin-right: 5px;
+        position: absolute;
+    }
+    button {
+            width: 200px;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            position: absolute;
+            margin-top: 200px;
+        }
+    button:hover{
+        background-color:#0b243d;
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Demo 1</h1>
+<div id="main">
+  <form class="add form-container">
+    <h5 class="pcba-label">PCBA BBV-BC-105 REV 1</h3>
+    <input type="hidden" id="hiddenInput" value="PCBA BBV-BC-105 REV 1" name="Description" required>
+    <input type="hidden" id="hiddenunitPrice" value="419.58" name="unitPrice" required>
+    <input type="hidden" id="hiddenTax" value="7.25%" name="Tax" required>
+    <img src="../src/img/pcba.jpg" alt="pcba">
+    <button>Add to cart</button>
+
+  </form>
+  <form class="add2 form-container">
+    <h5 class="pcba-label">Flange Shaft Coupling Connector</h3>
+    <input type="hidden" id="hiddenInput" value="Flange Shaft Coupling Connector" name="Description" required>
+    <input type="hidden" id="hiddenunitPrice" value="9.31" name="unitPrice" required>
+    <input type="hidden" id="hiddenTax" value="7.25%" name="Tax" required>
+    <img src="../src/img/flage.jpg" alt="pcba">
+    <button>Add to cart</button>
+
+  </form>
+  <form class="add3 form-container">
+    <h5 class="pcba-label">Linear bearing set of 12</h3>
+    <input type="hidden" id="hiddenInput" value="Linear bearing set of 12" name="Description" required>
+    <input type="hidden" id="hiddenunitPrice" value="13.97" name="unitPrice" required>
+    <input type="hidden" id="hiddenTax" value="7.25%" name="Tax" required>
+    <img src="../src/img/linear.jpg" alt="pcba">
+    <button>Add to cart</button>
+
+  </form>
+</form>
+<form class="add4 form-container">
+  <h5 class="pcba-label">5pc 304 stainless steel rod</h3>
+  <input type="hidden" id="hiddenInput" value="5pc 304 stainless steel rod" name="Description" required>
+  <input type="hidden" id="hiddenunitPrice" value="17.66" name="unitPrice" required>
+  <input type="hidden" id="hiddenTax" value="7.25%" name="Tax" required>
+  <img src="../src/img/stain.jpg" alt="pcba">
+  <button>Add to cart</button>
+
+</form>
+</div>
+  <script src="bundle.js"></script>
+</body>
+</html>
