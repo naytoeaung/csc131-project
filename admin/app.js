@@ -4,7 +4,14 @@ const { getStorage, getDownloadURL } = require('firebase-admin/storage');
 const { execSync } = require('child_process');
 const fs = require('fs')
 
-async function run() {
+const { sampleDocument } = require('./sample.js');
+const { fillLatex } = require('./fill.js');
+
+async function main() {
+    // to authorize: go to firebase settings > service accounts
+    // and download a new private key, then set
+    // the environment variable GOOGLE_APPLICATION_CREDENTIALS
+    // to the path to the downloaded file
     const app = initializeApp({
         credential: applicationDefault(),
         storageBucket: 'csc-131-a8d6a.appspot.com'
@@ -12,12 +19,11 @@ async function run() {
     const db = getFirestore();
     const storage = getStorage();
 
-    // put the firestore document id here
-    const documentID = 'test';
-    // make sure the firestore document includes a field "template"
-    // which includes the name of a .tex file stored in the bucket
+    const documentID = 'test'; // put the firestore document id here
+    const doc = db.collection('data').doc(documentID);
+    await doc.set(sampleDocument());
 
-    fill(db, storage, documentID);
+    run(db, storage, documentID);
     // after this runs, check cloud storage to see the pdf
 }
 
@@ -29,27 +35,11 @@ async function uploadFile(storage, path, output) {
     await storage.bucket().upload(path, {destination: output})
 }
 
-function fillInData(latex, data) {
-    const parts = latex.split("@");
-    let result = "";
-    let keyMode = false;
-    for (let i in parts) {
-        let part = parts[i];
-        if (keyMode) {
-            const directions = part.split('.');
-            part = data
-            for (let j in directions) {
-                let direction = directions[j];
-                part = part[direction]
-            }
-        }
-        result += part
-        keyMode = !keyMode
-    }
-    return result
-}
+async function run(db, storage, document) {
+    // create directory for temporary files
+    if (!fs.existsSync('process'))
+        fs.mkdirSync('process');
 
-async function fill(db, storage, document) {
     // 1. get fill in data from firestore
     const doc = db.collection('data').doc(document);
     const snapshot = await doc.get();
@@ -57,19 +47,24 @@ async function fill(db, storage, document) {
 
     // 2. download template from storage
     const templatePath = data['template'];
-    await downloadFile(storage, templatePath, 'template.tex');
-    const template = fs.readFileSync('template.tex', 'utf8');
+    await downloadFile(storage, templatePath, 'process/template.tex');
+    await downloadFile(storage, 'ansync.jpg', 'process/ansync.jpg');
+    const template = fs.readFileSync('process/template.tex', 'utf8');
 
     // 3. fill in template
-    const newLatex = fillInData(template, data);
-    fs.writeFileSync("result.tex", newLatex);
+    const newLatex = fillLatex(template, data);
+    fs.writeFileSync("process/result.tex", newLatex);
 
     // 4. convert to pdf
-    execSync('pdflatex result.tex', logError);
+    try {
+        execSync('pdflatex result.tex', {cwd: 'process', timeout: 1000});
+    } catch (error) {
+        console.log(error.stdout.toString());
+    }
 
     // 5. upload pdf to storage
     const resultPath = `${document}.pdf`;
-    await uploadFile(storage, 'result.pdf', resultPath);
+    await uploadFile(storage, 'process/result.pdf', resultPath);
 
     // 6. update firestore with generation info
     const url = await getDownloadURL(storage.bucket().file(resultPath));
@@ -82,12 +77,8 @@ async function fill(db, storage, document) {
     // 7. send email
     // unfinished
 
-    // 8. delete unused local files
-    // unfinished
+    // delete unused local files
+    fs.rmSync('process', {recursive: true});
 }
 
-function logError(error) {
-    if (error) console.log(error);
-}
-
-run();
+main();
