@@ -11,8 +11,8 @@ function sampleDocument() {
         items.push({
             name: 'item' + (i + 1),
             quantity: quantity,
-            uprice: '\\$' + uprice.toFixed(2),
-            amount: '\\$' + amount.toFixed(2),
+            uprice: uprice,
+            amount: amount,
         });
     }
     return {
@@ -20,7 +20,7 @@ function sampleDocument() {
         template: 'invoice.tex',
         items: items,
         invoicex: Math.floor(Math.random() * 10000),
-        total: '\\$' + total.toFixed(2)
+        total: total
     };
 }
 module.exports = { sampleDocument };

@@ -1,0 +1,72 @@
+\documentclass{letter}
+\usepackage{graphicx} % Required for inserting images
+%%%%% PAGE MARGINS %%%%%
+\usepackage[top = 1.5 cm, bottom = 1.5 cm, left = 1.5 cm, right = 1.5 cm]{geometry}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{multicol}
+%%\usepackage{fancyhdr} payment advice footer package
+
+%%%%% Column Definitions %%%%%
+% \newcolumntype{L}{>{\raggedleftarraybackslash}X}
+% \newcolumntype{C}{>{\centering\arraybackslash}X}
+% \newcolumntype{R}{>{\raggedleftarraybackslash}X}
+
+%%%%% INSERT RECIPIENT INFO %%%%%
+\xdef \invoicenumber{@invoicex}
+\xdef \invoicedate{@date}
+\xdef \businessname{Evil, inc.}
+\xdef \businessaddress{@address}
+\xdef \businesscity{@city}
+\xdef \businessphone {@phone}
+\xdef \referencename {@refname}
+
+%%%%%% END COMPANY READING %%%%%%
+
+\begin{document}
+\vspace{1cm}
+\begin{tabular}{l r}
+   \multirow{2}{*}{\includegraphics[height = 3cm]{ansync.jpg}} & \\
+   \hspace{4 cm}\huge\textbf{ANSYNC}
+\end{tabular}
+
+\vspace{0.5cm}
+\begin{tabularx}{\linewidth} { X r } 
+    \hspace{7cm}\centering\multirow{6}{*}{\begin{tabular}{l}
+        \footnotesize \\
+        [-0.8ex] \small\bf  Invoice Date \\
+        [-0.6ex] \small     {\today} \\
+        [-0.4ex] \small\bf  Invoice Number \\
+        [-0.6ex] \small     \invoicenumber{} \\
+        [-0.4ex] \small\bf  Reference \\ 
+        [-0.6ex] \small     Zurg 2.0 \\ 
+    \end{tabular}}
+        
+        & \multirow{6}{*}{\begin{tabular}{r}
+            \footnotesize \\
+            [-0.8ex] \small\bf Ansync, Inc. \\
+            [-0.2ex] \small 5090 Robert J. Mathews Pkwy \\
+            [-0.6ex] \small Suite 1 \\
+            [-0.6ex] \small El Dorado Hills, CA \\
+            [-0.6ex] \small 95762 \\
+            [-0.6ex] \small United States
+        \end{tabular}}\hspace{-6pt}
+    \end{tabularx} %% overleaf error: pre-am?
+
+\vspace{3.5cm}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\linewidth}{X X X r}
+    Product & Quantity & Unit Price & Amount \\
+    \hline \\[-0.9ex]
+  %  \begin{itemize} %% Would be this format to itemize
+    % @for(items)
+    @item.name & @item.quantity & @dollar(item.uprice) & @dollar(item.amount) \\
+    % @endfor()
+    \textbf{Total} &  &  & \textbf{@dollar(total)} \\
+%    \end{itemize}
+\end{tabularx} %% same overleaf error %%%
+
+%%\fancyfoot[L]\huge\textbf{PAYMENT ADVICE}
+
+\end{document}

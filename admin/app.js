@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const fs = require('fs')
 
 const { sampleDocument } = require('./sample.js');
-const { fillLatex } = require('./fill.js');
+const { Parser } = require('./fill.js');
 
 async function main() {
     // to authorize: go to firebase settings > service accounts
@@ -52,7 +52,8 @@ async function run(db, storage, document) {
     const template = fs.readFileSync('process/template.tex', 'utf8');
 
     // 3. fill in template
-    const newLatex = fillLatex(template, data);
+    const parser = new Parser(template, data);
+    const newLatex = parser.parse();
     fs.writeFileSync("process/result.tex", newLatex);
 
     // 4. convert to pdf
