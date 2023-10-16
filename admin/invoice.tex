@@ -61,9 +61,9 @@
     \hline \\[-0.9ex]
   %  \begin{itemize} %% Would be this format to itemize
     % @for(items)
-    @item.name & @item.quantity & @item.uprice & @item.amount \\
+    @item.name & @item.quantity & @dollar(item.uprice) & @dollar(item.amount) \\
     % @endfor()
-    \textbf{Total} &  &  & \textbf{@total} \\
+    \textbf{Total} &  &  & \textbf{@dollar(total)} \\
 %    \end{itemize}
 \end{tabularx} %% same overleaf error %%%
 
