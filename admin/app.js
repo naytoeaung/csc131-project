@@ -1,71 +1,89 @@
-const { initializeApp, applicationDefault } = require('firebase-admin/app');
+require('dotenv').config();
+const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage, getDownloadURL } = require('firebase-admin/storage');
-const { execSync } = require('child_process');
 const fs = require('fs')
 
 const { sampleDocument } = require('./sample.js');
 const { Parser } = require('./fill.js');
+const { setUp, generateExec, cleanUp } = require('./generate.js');
 
+initializeApp({
+    storageBucket: process.env.STORAGE_BUCKET
+});
+const db = getFirestore();
+const storage = getStorage();
+
+/**
+ * The main program. Starts when you run the program
+ */
 async function main() {
-    // to authorize: go to firebase settings > service accounts
-    // and download a new private key, then set
-    // the environment variable GOOGLE_APPLICATION_CREDENTIALS
-    // to the path to the downloaded file
-    const app = initializeApp({
-        credential: applicationDefault(),
-        storageBucket: 'csc-131-a8d6a.appspot.com'
-    });
-    const db = getFirestore();
-    const storage = getStorage();
-
     const documentID = 'test'; // put the firestore document id here
     const doc = db.collection('data').doc(documentID);
     await doc.set(sampleDocument());
 
-    run(db, storage, documentID);
+    run(documentID);
     // after this runs, check cloud storage to see the pdf
 }
 
-async function downloadFile(storage, path, output) {
+/**
+ * Downloads a file from cloud storage to local storage
+ * @param {*} path - the location in cloud storage to download
+ * @param {*} output - the location in local storage to save to
+ */
+async function downloadFile(path, output) {
     await storage.bucket().file(path).download({destination: output});
 }
 
-async function uploadFile(storage, path, output) {
+/**
+ * Downloads all files from a folder in cloud storage to local storage
+ * @param {*} path - the folder in cloud storage to download
+ * @param {*} output - the location in local storage to save to
+ */
+async function downloadFolder(path, output) {
+    const files = await storage.bucket().getFiles({ prefix: path + '/', autoPaginate: false });
+    await Promise.all(files[0].map(async (file) => {
+        let trimmedPath = file.name.split('/').at(-1);
+        if (trimmedPath == '') return;
+        await file.download({destination: output + '/' + trimmedPath});
+    }));
+}
+
+/**
+ * Uploads a file from local storage to cloud storage
+ * @param {} path - the file to upload to the cloud
+ * @param {*} output - the location in cloud storage to save to
+ */
+async function uploadFile(path, output) {
     await storage.bucket().upload(path, {destination: output})
 }
 
-async function run(db, storage, document) {
-    // create directory for temporary files
-    if (!fs.existsSync('process'))
-        fs.mkdirSync('process');
-
+/**
+ * Runs through all steps of filling template and generating pdf
+ * @param {string} document - id of document in firestore to generate from
+ */
+async function run(document) {
     // 1. get fill in data from firestore
     const doc = db.collection('data').doc(document);
     const snapshot = await doc.get();
     const data = snapshot.data();
 
     // 2. download template from storage
-    const templatePath = data['template'];
-    await downloadFile(storage, templatePath, 'process/template.tex');
-    await downloadFile(storage, 'ansync.jpg', 'process/ansync.jpg');
-    const template = fs.readFileSync('process/template.tex', 'utf8');
+    setUp();
+    const templatePath = 'templates/' + data['template'];
+    await downloadFolder(templatePath, 'tmp');
+    const template = fs.readFileSync('tmp/template.tex', 'utf8');
 
     // 3. fill in template
     const parser = new Parser(template, data);
     const newLatex = parser.parse();
-    fs.writeFileSync("process/result.tex", newLatex);
 
     // 4. convert to pdf
-    try {
-        execSync('pdflatex result.tex', {cwd: 'process', timeout: 1000});
-    } catch (error) {
-        console.log(error.stdout.toString());
-    }
+    const result = generateExec(newLatex);
 
     // 5. upload pdf to storage
-    const resultPath = `${document}.pdf`;
-    await uploadFile(storage, 'process/result.pdf', resultPath);
+    const resultPath = `documents/${document}.pdf`;
+    await uploadFile(result, resultPath);
 
     // 6. update firestore with generation info
     const url = await getDownloadURL(storage.bucket().file(resultPath));
@@ -78,8 +96,7 @@ async function run(db, storage, document) {
     // 7. send email
     // unfinished
 
-    // delete unused local files
-    fs.rmSync('process', {recursive: true});
+    cleanUp();
 }
 
 main();

@@ -1,14 +1,17 @@
-// for testing fill
+// for testing
 
 const { Parser } = require('./fill.js');
+const { generateExec, cleanUp } = require('./generate.js')
 const { sampleDocument } = require('./sample.js');
 const fs = require('fs');
 
 function run() {
-    const data = sampleDocument();
-    const template = fs.readFileSync('admin/invoice.tex', 'utf-8');
-    const result = (new Parser(template, data)).parse();
-    console.log(result);
+    const data = sampleDocument(100);
+    const template = fs.readFileSync('invoice.tex', 'utf-8');
+    const latex = (new Parser(template, data)).parse();
+    const pdfPath = generateExec(latex);
+    console.log(pdfPath);
+    // cleanUp();
 }
 
 run();

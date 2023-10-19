@@ -1,6 +1,17 @@
-// used to fill latex templates with data
+/**
+ * Fills in LaTeX template with data from firestore
+ * @module fill
+ */
 
+/**
+ * Class for parsing LaTex and replacing @ symbols
+ */
 class Parser {
+    /**
+     * Creates a 
+     * @param {string} latex - latex template to fill in
+     * @param {object} data - firestore data to fill in with
+     */
     constructor(latex, data) {
         this.latex = latex;
         this.data = data;
@@ -11,8 +22,11 @@ class Parser {
         }
     }
 
+    /**
+     * Runs through the LaTeX code and finds @ symbols to replace
+     * @returns {string} resulting LaTeX code
+     */
     parse() {
-        // runs through latex document, looking for @ symbols to replace
         let result = '';
         this.i = 0;
         while (this.i < this.latex.length) {
@@ -77,35 +91,5 @@ function endFor(parser, _) {
     parser.data['item'] = parser.forList[parser.forIndex];
     return '';
 }
-
-// old
-// function fillLatex(latex, data) {
-//     const parts = latex.split('@');
-//     let codeMode = false;
-//     let result = "";
-//     for (let i in parts) {
-//         let part = parts[i];
-//         if (codeMode) {
-//             result += interpret(part, data);
-//         } else {
-//             result += part;
-//         }
-//         codeMode = !codeMode;
-//     }
-//     return result;
-// }
-
-// // old
-// function interpret(code, data) {
-//     // e.g. invoiceNum -> data["invoiceNum"]
-//     const path = code.split('.');
-//     let result = data;
-//     for (let i in path) {
-//         result = result[path[i]];
-//         // goes down a specified path
-//         // e.g. items.0.price -> data["items"][0]["price"]
-//     }
-//     return result;
-// }
 
 module.exports = { Parser };
