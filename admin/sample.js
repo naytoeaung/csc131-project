@@ -30,6 +30,7 @@ function sampleDocument(numItems=null) {
         });
     }
     return {
+        run: true,
         generated: false,
         template: 'invoice',
         items: items,
