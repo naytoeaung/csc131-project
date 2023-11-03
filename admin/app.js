@@ -1,4 +1,6 @@
 require('dotenv').config();
+
+const sgMail = require('@sendgrid/mail')
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage, getDownloadURL } = require('firebase-admin/storage');
@@ -7,6 +9,13 @@ const fs = require('fs')
 const { sampleDocument } = require('./sample.js');
 const { Parser } = require('./fill.js');
 const { setUp, generateExec, cleanUp } = require('./generate.js');
+
+//sendgrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const {Storage} = require('@google-cloud/storage');
+const bucketName = 'gs://fir-9-dojo-afab9.appspot.com';
+const fileName = 'documents/test.pdf';
+
 
 initializeApp({
     storageBucket: process.env.STORAGE_BUCKET
@@ -91,12 +100,38 @@ async function run(document) {
         generated: true,
         url: url
     });
+
     // to do: error detection
 
     // 7. send email
-    // unfinished
+    async function sendEmailWithAttachment() {
+        const file = storage.bucket(bucketName).file(fileName);
+        // Downloads the file
+        const [buffer] = await file.download();
+      
+        //message
+        const msg = {
+          to: 'naytoeaung99@gmail.com',
+          from: 'naytoeaung@csus.edu',
+          subject: 'PDF Attachment',
+          text: 'Hello, this is your receipt',
+          attachments: [
+            {
+              content: buffer.toString('base64'),
+              filename: 'Receipt.pdf',
+              type: 'application/pdf',
+              disposition: 'attachment',
+            },
+          ],
+        };
+        sgMail
+          .send(msg)
+          .then(() => console.log('Email sent'))
+          .catch((error) => console.error(error));
+      }
+      sendEmailWithAttachment();
 
+    // unfinished
     cleanUp();
 }
-
 main();
