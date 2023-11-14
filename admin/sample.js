@@ -3,7 +3,7 @@
  * @module sample
  */
 
-const itemOptions = ['Pencils', 'Pens', 'Calculators', 'Erasers', 'Markers', 'Highlighters', 'Sharpies'];
+const itemOptions = ['Pencils', 'Pens', 'Calculators', 'Erasers', 'Markers', 'Highlighters', 'Sharpies', 'Tables', 'Furniture', 'Computers', 'Chairs', 'An article of furniture consisting of a flat slablike top supported on one or more legs or other supports'];
 
 /**
  * Generates random sample data for the invoice template
@@ -18,7 +18,7 @@ function sampleDocument(numItems=null) {
     let total = 0;
     for (let i = 0; i < numItems; i++) {
         let name = itemOptions[Math.floor(Math.random() * itemOptions.length)];
-        let quantity = Math.floor(Math.random() * 20);
+        let quantity = Math.floor(Math.random() * 20) + 1;
         let uprice = Math.floor(Math.random() * 200) / 100;
         let amount = quantity * uprice;
         total += amount;
@@ -38,4 +38,36 @@ function sampleDocument(numItems=null) {
         total: total
     };
 }
-module.exports = { sampleDocument };
+/**
+ * Sample data for invoice2 template (with csv data)
+ * @returns {object} data to be put in firestore
+ */
+function sampleDocument2() {
+    let items = []
+    let total = 0;
+    for (let i = 0; i < 100; i++) {
+        let name = itemOptions[Math.floor(Math.random() * itemOptions.length)];
+        let quantity = Math.floor(Math.random() * 20) + 1;
+        let uprice = (Math.floor(Math.random() * 200) / 100)
+        let amount = (quantity * uprice);
+        total += amount;
+        items.push({
+            "Product": name,
+            "Quantity": quantity,
+            "Uprice": uprice.toFixed(2),
+            "Price": amount.toFixed(2),
+        });
+    }
+
+    return {
+        template: "invoice2",
+        run: false,
+        invoicex: Math.floor(Math.random() * 10000),
+        refname: Math.floor(Math.random() * 10000),
+        csv: {
+            "sampletxt.csv": items
+        }
+    }
+}
+
+module.exports = { sampleDocument, sampleDocument2 };

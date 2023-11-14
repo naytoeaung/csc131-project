@@ -1,0 +1,86 @@
+\documentclass[12pt]{letter}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[top = 1.5 cm, bottom = 2 cm, left = 1.5 cm, right = 1.5 cm]{geometry}
+\usepackage{datatool}
+\usepackage{array}
+\usepackage{xltabular}
+\usepackage{multirow}
+\usepackage{multicol}
+
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}}
+\newcolumntype{B}{X}
+\newcolumntype{N}{>{\hsize=.32\hsize}X}
+
+
+%%%% DEFINITIONS %%%%%
+\xdef \invoicenumber{@invoicex}
+\xdef \invoicedate{@date@}
+\xdef \businessname{Evil, inc.}
+\xdef \businessaddress{@address}
+\xdef \businesscity{@city}
+\xdef \businessphone {@phone}
+\xdef \referencename {@refname}
+%%%% END DEFS %%%%
+\begin{document}
+\vspace{1cm}
+\begin{tabular}{l r}
+   \multirow{2}{*}{\includegraphics[height = 3.5cm]{ansync.jpg}} & \\
+   \hspace{4 cm}\huge\textbf{ANSYNC}
+\end{tabular}
+
+\vspace{0.5cm}
+\begin{tabularx}{\linewidth} { X r } 
+    \hspace{7cm}\centering
+    \multirow{6}{*}{\begin{tabular}{l}
+        \footnotesize \\
+        [-0.8ex] \small\bf  Invoice Date \\
+        [-0.2ex] \small     {\today} \\ % should be \date
+        [ 0.4ex] \small\bf  Invoice Number \\
+        [-0.6ex] \small     \invoicenumber{} \\
+        [ 0.4ex] \small\bf  Reference \\ 
+        [-0.6ex] \small     \referencename{} \\ 
+    \end{tabular}}
+    &
+    \multirow{6}{*}{\begin{tabular}{r}
+        \footnotesize \\
+        [-0.8ex] \normalsize\bf Ansync, Inc. \\
+        [ 0.6ex] \small 5090 Robert J. Mathews Pkwy \\
+        [-0.4ex] \small Suite 1 \\
+        [-0.4ex] \small El Dorado Hills, CA \\
+        [-0.4ex] \small 95762 \\
+        [-0.2ex] \small UNITED STATES \\
+    \end{tabular}}\hspace{-6pt}
+    \end{tabularx} %% overleaf error: pre-am?
+
+\vspace{4.5 cm}
+
+\DTLloaddb{product}{sampletxt.csv} 
+%% ^^ wInput file name goes here ^^ %%
+
+\renewcommand{\arraystretch}{1.5}
+\renewcommand\tabularxcolumn[1]{m{#1}} %% bless %%
+\begin{xltabular}{ \textwidth} {  
+    >{\raggedright\arraybackslash}  B 
+    >{\centering\arraybackslash}    N
+    >{\centering\arraybackslash}    N
+    >{\raggedleft\arraybackslash}   N
+}
+%%\multicolumn{1}{l}
+{\bfseries\normalsize Product} &
+%%\multicolumn{1}{c}
+{\bfseries\normalsize Quantity} &
+%%\multicolumn{1}{c}
+{\bfseries\normalsize Unit Price} &
+%%\multicolumn{1}{r}
+{\bfseries\normalsize Price}\\
+\hline \\[-1.6ex]
+\endhead
+\DTLforeach{product} {%
+\product=Product, \quantity=Quantity,
+\uprice=Uprice, \price=Price} {%
+% start new row}
+\product & \quantity & \uprice & \price \\}
+
+
+\end{xltabular}
+\end{document}

@@ -1,20 +1,15 @@
 require('dotenv').config();
 
-const sgMail = require('@sendgrid/mail')
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage, getDownloadURL } = require('firebase-admin/storage');
 const fs = require('fs')
 
-const { sampleDocument } = require('./sample.js');
+const { sampleDocument, sampleDocument2 } = require('./sample.js');
 const { Parser } = require('./fill.js');
 const { setUp, generateExec, cleanUp } = require('./generate.js');
-
-//sendgrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const {Storage} = require('@google-cloud/storage');
-const bucketName = 'gs://fir-9-dojo-afab9.appspot.com';
-const fileName = 'documents/test.pdf';
+// const { sendEmail } = require('./email.js');
+const { handleCSV } = require('./csv.js');
 
 
 initializeApp({
@@ -27,9 +22,9 @@ const storage = getStorage();
  * The main program. Starts when you run the program
  */
 async function main() {
-    const documentID = 'test'; // put the firestore document id here
+    const documentID = 'demo'; // put the firestore document id here
     const doc = db.collection('data').doc(documentID);
-    await doc.set(sampleDocument());
+    await doc.set(sampleDocument2());
 
     run(documentID);
     // after this runs, check cloud storage to see the pdf
@@ -64,7 +59,7 @@ async function downloadFolder(path, output) {
  * @param {*} output - the location in cloud storage to save to
  */
 async function uploadFile(path, output) {
-    await storage.bucket().upload(path, {destination: output})
+    await storage.bucket().upload(path, {destination: output});
 }
 
 /**
@@ -83,6 +78,10 @@ async function run(document) {
     await downloadFolder(templatePath, 'tmp');
     const template = fs.readFileSync('tmp/template.tex', 'utf8');
 
+    // get csv data from firestore
+    if (data.csv)
+        handleCSV(data.csv);
+
     // 3. fill in template
     const parser = new Parser(template, data);
     const newLatex = parser.parse();
@@ -97,6 +96,7 @@ async function run(document) {
     // 6. update firestore with generation info
     const url = await getDownloadURL(storage.bucket().file(resultPath));
     await doc.update({
+        run: false,
         generated: true,
         url: url
     });
@@ -104,34 +104,11 @@ async function run(document) {
     // to do: error detection
 
     // 7. send email
-    async function sendEmailWithAttachment() {
-        const file = storage.bucket(bucketName).file(fileName);
-        // Downloads the file
-        const [buffer] = await file.download();
-      
-        //message
-        const msg = {
-          to: 'naytoeaung99@gmail.com',
-          from: 'naytoeaung@csus.edu',
-          subject: 'PDF Attachment',
-          text: 'Hello, this is your receipt',
-          attachments: [
-            {
-              content: buffer.toString('base64'),
-              filename: 'Receipt.pdf',
-              type: 'application/pdf',
-              disposition: 'attachment',
-            },
-          ],
-        };
-        sgMail
-          .send(msg)
-          .then(() => console.log('Email sent'))
-          .catch((error) => console.error(error));
-      }
-      sendEmailWithAttachment();
+    const file = storage.bucket().file(resultPath);
+    const [buffer] = await file.download();
+    // await sendEmail(buffer);
 
-    // unfinished
+    // remove temporary files
     cleanUp();
 }
 main();

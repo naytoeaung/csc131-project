@@ -25,7 +25,7 @@ function generateExec(latex) {
     fs.writeFileSync('tmp/result.tex', latex);
 
     try {
-        execSync('pdflatex result.tex', {cwd: 'tmp', timeout: 1000});
+        execSync('pdflatex result.tex', {cwd: 'tmp', timeout: 10000});
     } catch (error) {
         console.log(error);
         if (error.stdout) console.log(error.stdout.toString());
