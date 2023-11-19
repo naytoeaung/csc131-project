@@ -42,7 +42,7 @@ function sampleDocument(numItems=null) {
  * Sample data for invoice2 template (with csv data)
  * @returns {object} data to be put in firestore
  */
-function sampleDocument2() {
+function sampleDocument2(email=true) {
     let items = []
     let total = 0;
     for (let i = 0; i < 100; i++) {
@@ -59,7 +59,7 @@ function sampleDocument2() {
         });
     }
 
-    return {
+    let result = {
         template: "invoice2",
         run: false,
         invoicex: Math.floor(Math.random() * 10000),
@@ -68,6 +68,15 @@ function sampleDocument2() {
             "sampletxt.csv": items
         }
     }
+    if (email) {
+        result.email = {
+            subject: "Your Invoice",
+            text: "Here is your invoice.",
+            to: process.env.SAMPLE_EMAIL,
+            attachmentName: "Invoice.pdf"
+        }
+    }
+    return result
 }
 
 module.exports = { sampleDocument, sampleDocument2 };

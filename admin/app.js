@@ -8,7 +8,7 @@ const fs = require('fs')
 const { sampleDocument, sampleDocument2 } = require('./sample.js');
 const { Parser } = require('./fill.js');
 const { setUp, generateExec, cleanUp } = require('./generate.js');
-// const { sendEmail } = require('./email.js');
+const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
 
 
@@ -22,44 +22,13 @@ const storage = getStorage();
  * The main program. Starts when you run the program
  */
 async function main() {
-    const documentID = 'demo'; // put the firestore document id here
-    const doc = db.collection('data').doc(documentID);
-    await doc.set(sampleDocument2());
+    const document = sampleDocument2()
+    const result = await db.collection('data').add(document)
+    const documentID = result.id;
+    console.log(`added document ${documentID} with invoice number ${document.invoicex}`)
 
     run(documentID);
     // after this runs, check cloud storage to see the pdf
-}
-
-/**
- * Downloads a file from cloud storage to local storage
- * @param {*} path - the location in cloud storage to download
- * @param {*} output - the location in local storage to save to
- */
-async function downloadFile(path, output) {
-    await storage.bucket().file(path).download({destination: output});
-}
-
-/**
- * Downloads all files from a folder in cloud storage to local storage
- * @param {*} path - the folder in cloud storage to download
- * @param {*} output - the location in local storage to save to
- */
-async function downloadFolder(path, output) {
-    const files = await storage.bucket().getFiles({ prefix: path + '/', autoPaginate: false });
-    await Promise.all(files[0].map(async (file) => {
-        let trimmedPath = file.name.split('/').at(-1);
-        if (trimmedPath == '') return;
-        await file.download({destination: output + '/' + trimmedPath});
-    }));
-}
-
-/**
- * Uploads a file from local storage to cloud storage
- * @param {} path - the file to upload to the cloud
- * @param {*} output - the location in cloud storage to save to
- */
-async function uploadFile(path, output) {
-    await storage.bucket().upload(path, {destination: output});
 }
 
 /**
@@ -94,21 +63,58 @@ async function run(document) {
     await uploadFile(result, resultPath);
 
     // 6. update firestore with generation info
+    const log = fs.readFileSync('tmp/result.log', 'utf-8');
     const url = await getDownloadURL(storage.bucket().file(resultPath));
     await doc.update({
         run: false,
         generated: true,
-        url: url
+        url: url,
+        log: log
     });
 
     // to do: error detection
 
     // 7. send email
-    const file = storage.bucket().file(resultPath);
-    const [buffer] = await file.download();
-    // await sendEmail(buffer);
+    if (data.email) {
+        const file = storage.bucket().file(resultPath);
+        const [buffer] = await file.download();
+        await sendEmail(buffer, data.email);
+    }
 
     // remove temporary files
     cleanUp();
 }
+
+/**
+ * Downloads a file from cloud storage to local storage
+ * @param {*} path - the location in cloud storage to download
+ * @param {*} output - the location in local storage to save to
+ */
+async function downloadFile(path, output) {
+    await storage.bucket().file(path).download({destination: output});
+}
+
+/**
+ * Downloads all files from a folder in cloud storage to local storage
+ * @param {*} path - the folder in cloud storage to download
+ * @param {*} output - the location in local storage to save to
+ */
+async function downloadFolder(path, output) {
+    const files = await storage.bucket().getFiles({ prefix: path + '/', autoPaginate: false });
+    await Promise.all(files[0].map(async (file) => {
+        let trimmedPath = file.name.split('/').at(-1);
+        if (trimmedPath == '') return;
+        await file.download({destination: output + '/' + trimmedPath});
+    }));
+}
+
+/**
+ * Uploads a file from local storage to cloud storage
+ * @param {} path - the file to upload to the cloud
+ * @param {*} output - the location in cloud storage to save to
+ */
+async function uploadFile(path, output) {
+    await storage.bucket().upload(path, {destination: output});
+}
+
 main();
