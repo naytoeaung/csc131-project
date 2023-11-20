@@ -7,7 +7,7 @@ const fs = require('fs')
 
 const { sampleDocument, sampleDocument2 } = require('./sample.js');
 const { Parser } = require('./fill.js');
-const { setUp, generateExec, cleanUp } = require('./generate.js');
+const { setUp, generateExec, generateCloud, cleanUp } = require('./generate.js');
 const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
 
@@ -49,7 +49,7 @@ async function run(document) {
 
     // get csv data from firestore
     if (data.csv)
-        handleCSV(data.csv);
+        await handleCSV(data.csv);
 
     // 3. fill in template
     const parser = new Parser(template, data);
