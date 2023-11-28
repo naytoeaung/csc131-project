@@ -5,16 +5,17 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage, getDownloadURL } = require('firebase-admin/storage');
 const fs = require('fs')
 
+initializeApp({
+    storageBucket: process.env.STORAGE_BUCKET
+});
+
 const { sampleDocument, sampleDocument2 } = require('./sample.js');
 const { Parser } = require('./fill.js');
 const { setUp, generateExec, generateCloud, cleanUp } = require('./generate.js');
 const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
+const { Processor } = require('./process.js');
 
-
-initializeApp({
-    storageBucket: process.env.STORAGE_BUCKET
-});
 const db = getFirestore();
 const storage = getStorage();
 
@@ -27,7 +28,8 @@ async function main() {
     const documentID = result.id;
     console.log(`added document ${documentID} with invoice number ${document.invoicex}`)
 
-    run(documentID);
+    await (new Processor(documentID, {cloud: false})).process();
+    // run(documentID);
     // after this runs, check cloud storage to see the pdf
 }
 

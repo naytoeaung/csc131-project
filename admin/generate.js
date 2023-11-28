@@ -32,15 +32,16 @@ function generateExec(latex) {
     try {
         execSync('pdflatex result.tex', {cwd: 'tmp', timeout: 10000});
     } catch (error) {
-        console.log(error);
-        if (error.stdout) console.log(error.stdout.toString());
+        if (error.stdout)
+            throw new Error(`pdflatex encountered an error:\n${error.stdout.toString()}`);
+        else
+            throw error;
     }
     return 'tmp/result.pdf';
 }
 
 /**
  * Converts LaTeX code to a PDF using DynamicDocs
- * UNFINISHED - does not work yet
  * @param {string} latex - the LaTeX to convert to PDF
  * @returns {Promise<string>} the file path to the resulting PDF
  */
@@ -61,25 +62,35 @@ async function generateCloud(latex) {
     };
     const response = await fetch(url, options);
     const data = await response.json();
-    console.log(data);
     const statusUrl = data['documentStatusUrl'];
+    if (!statusUrl) throw new Error(`DynamicDocs response did not include document status url\nResponse: ${data}`);
 
     let statusResponse = await fetch(statusUrl);
     let statusData = await statusResponse.json();
-    console.log(statusData);
     let i = 0;
     while (statusData['statusDescription'] === 'document processing' && i < 10) {
         await setTimeout(5000);
         statusResponse = await fetch(statusUrl);
         statusData = await statusResponse.json();
-        console.log(statusData);
         i++;
     }
+    if (i >= 10) throw new Error(`DynamicDocs took too long to generate a response (over 50 seconds)`);
     const pdfUrl = statusData['documentUrl'];
+    if (!pdfUrl) throw new Error(`DynamicDocs response did not include a pdf url.\nResponse: ${statusData}`);
+    const calculationLogUrl = statusData['calculationLogUrl'];
+    const latexLogUrl = statusData['latexLogUrl'];
 
     const pdfResponse = await fetch(pdfUrl);
     const writeStream = fs.createWriteStream('tmp/result.pdf');
     await streamPipeline(pdfResponse.body, writeStream);
+
+    const calculationResponse = await fetch(calculationLogUrl);
+    const calculationWriteStream = fs.createWriteStream('tmp/dynamicdocs.log');
+    await streamPipeline(calculationResponse.body, calculationWriteStream);
+
+    const latexResponse = await fetch(latexLogUrl);
+    const latexWriteStream = fs.createWriteStream('tmp/result.log');
+    await streamPipeline(latexResponse.body, latexWriteStream);
 
     return 'tmp/result.pdf'
 }
