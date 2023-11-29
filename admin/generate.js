@@ -50,7 +50,6 @@ async function generateCloud(latex) {
 
     const url = 'https://api.advicement.io/v1/templates/pub-tex-to-pdf-with-pdflatex-v1/compile';
     const body = await dynamicDocsBody(latex);
-    console.log(body);
     const headers = {
         'Adv-Security-Token': process.env.DYNAMIC_DOCS_TOKEN,
         'Content-Type': 'application/json'
@@ -148,7 +147,6 @@ async function dynamicDocsBody(latex) {
     }
 
     result['texFileContent'] = latex;
-    console.log(latex);
     return result
 }
 

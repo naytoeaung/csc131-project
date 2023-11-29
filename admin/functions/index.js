@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // functions imports
 const {onRequest} = require("firebase-functions/v2/https");
 const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
@@ -17,8 +19,19 @@ const storage = getStorage();
 const fs = require('fs')
 const {Parser} = require("../fill.js");
 const {setUp, generateExec, cleanUp} = require("../generate.js");
-const {sampleDocument} = require("../sample.js");
+const {sampleDocument, sampleDocument2} = require("../sample.js");
+const {initProcess, Processor} = require("../process.js");
+initProcess(app);
 
+async function newOnUpdate(documentId, data) {
+    if (data.run) {
+        logger.log(`Detected change to document ${documentId} (beginning process)`);
+        const processor = new Processor(documentId, {data: data, logger: logger.log, cloud: false});
+        processor.process();
+    } else {
+        logger.log(`Detected change to document ${documentId} (no update needed)`);
+    }
+}
 
 async function onUpdate(document, data) {
     if (data.run) {
@@ -59,21 +72,22 @@ async function onUpdate(document, data) {
 }
 
 exports.addsample = onRequest(async (req, res) => {
-    const document = sampleDocument();
+    const document = sampleDocument2();
     const result = await db.collection('data').add(document);
+    logger.log(`added document ID: ${result.id} invoiceNum: ${document.invoicex}`);
     res.json({result: `added document ID: ${result.id} invoiceNum: ${document.invoicex}`, document: document});
 });
 
 exports.oncreate = onDocumentCreated("data/{documentId}", async (event) => {
     const document = event.params.documentId;
-    const data = event.data.data()
-    await onUpdate(document, data)
+    const data = event.data.data();
+    await newOnUpdate(document, data);
 });
 
 exports.onupdate = onDocumentUpdated("data/{documentId}", async (event) => {
     const document = event.params.documentId;
-    const data = event.data.after.data()
-    await onUpdate(document, data)
+    const data = event.data.after.data();
+    await newOnUpdate(document, data);
 });
 
 

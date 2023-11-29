@@ -5,7 +5,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage, getDownloadURL } = require('firebase-admin/storage');
 const fs = require('fs')
 
-initializeApp({
+const app = initializeApp({
     storageBucket: process.env.STORAGE_BUCKET
 });
 
@@ -14,7 +14,8 @@ const { Parser } = require('./fill.js');
 const { setUp, generateExec, generateCloud, cleanUp } = require('./generate.js');
 const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
-const { Processor } = require('./process.js');
+const { initProcess, Processor } = require('./process.js');
+initProcess(app);
 
 const db = getFirestore();
 const storage = getStorage();

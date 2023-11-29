@@ -13,8 +13,15 @@ const { setUp, generateExec, generateCloud, cleanUp } = require('./generate.js')
 const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
 
-const db = getFirestore();
-const storage = getStorage();
+let db;
+let storage;
+function initProcess(app) {
+    db = getFirestore(app);
+    storage = getStorage(app);
+}
+
+// const db = getFirestore();
+// const storage = getStorage();
 
 /**
  * Class for handling processing a firestore document
@@ -55,8 +62,8 @@ class Processor {
         } catch (error) {
             this.log += `ERROR: ${error.name}\n${error.message}\n`
             this.logger(error);
-        } finally {
             await this.doc.update({
+                run: false,
                 "status.log": this.log
             });
         }
@@ -66,7 +73,7 @@ class Processor {
      * Run the entire process of filling in a template, generating a pdf, and sending an email, without handling errors
      */
     async run() {
-        this.logMessage(`Starting processing of document ${this.documentId}`)
+        this.logMessage(`Starting processing of document ${this.id}`)
 
         // DOWNLOAD DATA FROM FIRESTORE
         if (!this.data) {
@@ -146,6 +153,9 @@ class Processor {
         cleanUp();
 
         this.logMessage("Process successfully finished");
+        await this.doc.update({
+            "status.log": this.log
+        });
     }
 }
 
@@ -163,4 +173,4 @@ async function downloadFolder(path, output) {
     }));
 }
 
-module.exports = { Processor };
+module.exports = { Processor, initProcess };

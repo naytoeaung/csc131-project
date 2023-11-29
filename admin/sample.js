@@ -61,7 +61,7 @@ function sampleDocument2(email=true) {
 
     let result = {
         template: "invoice2",
-        run: false,
+        run: true,
         invoicex: Math.floor(Math.random() * 10000),
         refname: Math.floor(Math.random() * 10000),
         csv: {
