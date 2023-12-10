@@ -24,39 +24,6 @@ async function handleCSV(data) {
     }
 }
 
-
-/**
- * Converts an array of maps to a csv file
- * @param {Object[]} arr - array to convert to CSV
- * @returns {String} resulting CSV data
- */
-function createCSV(arr, resultPath) {
-    let headers = [];
-    for (let i in arr) {
-        for (let key in arr[i]) {
-            if (!headers.includes(key))
-                headers.push(key)
-        }
-    }
-    let rows = [];
-    rows.push(headers.join(', '));
-    for (let i in arr) {
-        let row = [];
-        let map = arr[i];
-        for (let h in headers) {
-            let item;
-            if (Object.hasOwn(map, headers[h])) {
-                item = map[headers[h]];
-            } else {
-                item = '';
-            }
-            row.push(item);
-        }
-        rows.push(row.join(', '));
-    }
-    return rows.join('\n');
-}
-
 /**
  * Converts csv data back to an array of maps
  * @param {str} csv
@@ -66,4 +33,4 @@ async function readCSV(csv) {
     return await csvParse(csv);
 }
 
-module.exports = { handleCSV, createCSV, readCSV };
+module.exports = { handleCSV, readCSV };

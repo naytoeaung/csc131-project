@@ -1,11 +1,10 @@
 /**
  * Runs all steps of the process of generating a PDF and sending an email
- * @module process
+ * @module document
  */
 
-const { initializeApp } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { getStorage, getDownloadURL } = require('firebase-admin/storage');
+const { db, storage } = require('./setup.js').getFirebase();
+const { getDownloadURL } = require('firebase-admin/storage');
 const fs = require('fs')
 
 const { Parser } = require('./fill.js');
@@ -13,20 +12,10 @@ const { setUp, generateExec, generateCloud, cleanUp } = require('./generate.js')
 const { sendEmail } = require('./email.js');
 const { handleCSV } = require('./csv.js');
 
-let db;
-let storage;
-function initProcess(app) {
-    db = getFirestore(app);
-    storage = getStorage(app);
-}
-
-// const db = getFirestore();
-// const storage = getStorage();
-
 /**
  * Class for handling processing a firestore document
  */
-class Processor {
+class Document {
     /**
      * Create a new processor to initiate processing a firestore document
      * @param {string} documentId - id of firestore document to process
@@ -173,4 +162,4 @@ async function downloadFolder(path, output) {
     }));
 }
 
-module.exports = { Processor, initProcess };
+module.exports = { Processor: Document, initProcess };
