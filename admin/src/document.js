@@ -17,20 +17,20 @@ const { handleCSV } = require('./csv.js');
  */
 class Document {
     /**
-     * Create a new processor to initiate processing a firestore document
+     * Create a new document to initiate processing a firestore document
      * @param {string} documentId - id of firestore document to process
-     * @param {*} options -
-     *  - data: provide firestore data if already known from functions
-     *  - logger: console.log by default, can set to cloud functions logger
-     *  - cloud: true: use DynamicDocs, false: use pdfLatex CLI
+     * @param {Object} options
+     * @param {*} options.data - provide firestore data if already known from functions
+     * @param {function} options.logger - console.log by default, can set to cloud functions logger
+     * @param {boolean} options.cloud - true: use DynamicDocs, false: use pdfLatex CLI
      */
-    constructor(documentId, options={}) {
+    constructor(documentId, {data, logger, cloud} = {}) {
         this.id = documentId;
         this.doc = db.collection('data').doc(documentId);
-        this.data = options.data;
-        this.logger = options.logger || console.log;
+        this.data = data;
+        this.logger = logger || console.log;
         this.log = "";
-        this.cloud = (options.cloud === undefined) ? true : options.cloud;
+        this.cloud = (cloud === undefined) ? true : cloud;
     }
 
     /**
@@ -114,7 +114,7 @@ class Document {
 
         // UPLOAD PDF TO STORAGE
         this.logMessage("Uploading PDF to Cloud Storage");
-        const storagePath = `documents/${this.documentId}.pdf`;
+        const storagePath = `documents/${this.id}.pdf`;
         await storage.bucket().upload(resultPath, {destination: storagePath});
         const url = await getDownloadURL(storage.bucket().file(storagePath));
 
@@ -126,12 +126,28 @@ class Document {
             "status.pdfLatexLog": pdfLatexLog
         });
 
+        // UPDATE DATA
+        // so that the email can include status information
+        const snapshot = await this.doc.get();
+        this.data = snapshot.data();
+
         // SEND EMAIL
         if (this.data.email) {
             this.logMessage("Sending Email via SendGrid");
             const file = storage.bucket().file(storagePath);
             const [buffer] = await file.download();
-            await sendEmail(buffer, this.data.email);
+            let emailData;
+            if (this.data.email.template) {
+                this.logMessage(`Downloading Email Template ${this.data.email.template}`);
+                const emailTemplatePath = 'emailTemplates/' + this.data.email.template;
+                await downloadFolder(emailTemplatePath, 'tmp');
+                const emailTemplate = fs.readFileSync('tmp/template.html', 'utf8');
+                const emailParser = new Parser(emailTemplate, this.data);
+                emailData = {html: emailParser.parse(), ...this.data.email};
+            } else {
+                emailData = this.data.email;
+            }
+            await sendEmail(buffer, emailData);
             await this.doc.update({
                 "status.emailed": true
             });
@@ -162,4 +178,4 @@ async function downloadFolder(path, output) {
     }));
 }
 
-module.exports = { Processor: Document, initProcess };
+module.exports = { Document };

@@ -48,7 +48,7 @@ function sampleInvoice(email=true) {
     if (email) {
         result.email = {
             subject: "Your Invoice",
-            text: "Here is your invoice.",
+            template: "invoice",
             to: process.env.SAMPLE_EMAIL,
             attachmentName: "Invoice.pdf"
         }
