@@ -2,9 +2,9 @@
  * Used for testing locally using "node dev/app.js". Adds a new random document and runs
  */
 
-const { db, storage } = require('../src/setup.js').getFirebase();
+const { db, storage } = require('./setup.js').getFirebase();
 const { sampleInvoice } = require('./sample.js');
-const { Document } = require('../src/document.js');
+const { Document } = require('./document.js');
 
 async function main() {
     const document = sampleInvoice()

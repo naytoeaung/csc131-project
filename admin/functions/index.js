@@ -4,10 +4,10 @@ const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/fi
 const logger = require("firebase-functions/logger");
 
 // firebase setup
-const {db, storage} = require('../src/setup.js').getFirebase();
+const {db, storage} = require('./setup.js').getFirebase();
 
-const {sampleInvoice} = require("../dev/sample.js");
-const {Document} = require("../src/document.js");
+const {sampleInvoice} = require("./sample.js");
+const {Document} = require("./document.js");
 
 /**
  * When functions detects a new or updated document, it calls this function to check if
