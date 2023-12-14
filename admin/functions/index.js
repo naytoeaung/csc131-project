@@ -18,7 +18,7 @@ const {Document} = require("./document.js");
 async function updateDocument(documentId, data) {
     if (data.run) {
         logger.log(`Detected change to document ${documentId} (beginning process)`);
-        const doc = new Document(documentId, {data: data, logger: logger.log, cloud: false});
+        const doc = new Document(documentId, {data: data, logger: logger.log});
         doc.process();
     } else {
         logger.log(`Detected change to document ${documentId} (no update needed)`);
@@ -36,7 +36,7 @@ async function updateAll() {
     for (i in result.docs) {
         const id = result.docs[i].id
         logger.log(`Found existing document that needs to run: ${id}`);
-        // const doc = new Document(id, {logger: logger.log, cloud: false});
+        // const doc = new Document(id, {logger: logger.log});
         // doc.process();
     }
 }
