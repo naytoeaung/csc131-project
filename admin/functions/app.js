@@ -7,12 +7,12 @@ const { sampleInvoice } = require('./sample.js');
 const { Document } = require('./document.js');
 
 async function main() {
-    const document = sampleInvoice()
+    const document = sampleInvoice("invoiceCustom")
     const result = await db.collection('data').add(document)
     const documentID = result.id;
     console.log(`added document ${documentID} with invoice number ${document.invoicex}`)
 
-    await (new Document(documentID, {cloud: false})).process();
+    // await (new Document(documentID, {cloud: false})).process();
 }
 
 main();

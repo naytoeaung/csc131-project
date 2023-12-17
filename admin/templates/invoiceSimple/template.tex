@@ -1,0 +1,143 @@
+\documentclass[12pt]{letter} %% letter includes 
+\usepackage{graphicx} % Required for inserting images
+\usepackage[top = 1.5 cm, bottom = 2 cm, left = 1.5 cm, right = 1.5 cm]{geometry} % Page margins
+\usepackage{datatool} % read in csv package
+\usepackage{xltabular} % tabularx + longtable
+\usepackage{multirow} % fit small heading
+\usepackage{multicol} % allows multicol
+\usepackage{fancyhdr} % footer control
+
+\newcommand{\heading}[1]{\multicolumn{1}{c}{#1}} % Apply centering to tabularx
+\newcolumntype{B}{X} % Column type 'B' for big (but its normal)
+\newcolumntype{N}{>{\hsize=.32\hsize}X} % Column type 'N' for normal, made 32% of standard column, and gives rest to B
+\newcolumntype{M}{>{\hsize=.45\hsize}X} %
+
+\newcommand{\paymentbox}[1]{\fbox{\rule[-0.2in]{0in}{.5in} #1}}
+
+%%%% DEFINITIONS %%%%%
+\xdef \invoicenumber {@invoicex}
+\xdef \referencename {@refname}
+\xdef \duedate {@duedate}
+\xdef \customername {@customer}
+
+\xdef \businessname{Ansync, inc.}
+\xdef \businessaddress{5090 Robert J Matthew Pkwy}
+\xdef \businesssuite {Suite 1}
+\xdef \businesscity{EL DORADO HILLS}
+\xdef \businessstate {CA} %% should be two char
+\xdef \businesszip {95762} %% 5 digit number
+
+
+%%%%%% CHANGE THIS %%%%%%%%
+%%%% END DEFS %%%%
+\begin{document} % begin 
+
+\vspace{1cm}
+\begin{tabular}{l r} % start of header
+   \multirow{2}{*}{\includegraphics[height = 3.5cm] {ansync.jpg}} & \\ %% logo graphic, made to height 3.5cm
+   \hspace{4 cm}\huge\textbf{ANSYNC}
+\end{tabular}
+
+\vspace{0.5cm}
+\begin{tabularx}{\linewidth} { X r } % left side headers
+    \hspace{7cm}\centering
+    \multirow{6}{*}{\begin{tabular}{l}
+        \footnotesize \\
+        [-0.8ex] \small\bf  Invoice Date \\
+        [-0.2ex] \small     {\today} \\ % should be \date
+        [ 0.4ex] \small\bf  Invoice Number \\
+        [-0.6ex] \small     \invoicenumber{} \\
+        [ 0.4ex] \small\bf  Reference \\ 
+        [-0.6ex] \small     \referencename{} \\ 
+    \end{tabular}}
+    &
+    \multirow{6}{*}{\begin{tabular}{r} % right side headers
+        \footnotesize \\
+        [-0.8ex] \normalsize\bf Ansync, Inc. \\
+        [ 0.5ex] \small \businessaddress \\
+        [-0.35ex] \small \businesssuite \\
+        [-0.35ex] \small \businesscity, \businessstate \ \\
+        [-0.35ex] \small \businesszip \\
+        [-0.25ex] \small UNITED STATES \\ 
+    \end{tabular}}\hspace{-6pt}
+    \end{tabularx} %% end of headers
+
+\vspace{4.5 cm} %% header-table seperater
+
+\DTLloaddb{items}{data.csv}
+%% ^^ Input file name goes here ^^ %%
+
+
+\renewcommand{\arraystretch}{1.5} % increase spacing between table entries vertically at factor of 1.5.
+\renewcommand\tabularxcolumn[1]{m{#1}} %% bless %%
+\begin{xltabular}{ \textwidth} {  %% begin invoice table
+    >{\raggedright\arraybackslash}  B 
+    >{\centering\arraybackslash}    N
+    >{\centering\arraybackslash}    N
+    >{\raggedleft\arraybackslash}   N
+}
+%% column labels 
+{\bfseries Description} & 
+{\bfseries Quantity} &
+{\bfseries Unit Price} &
+{\bfseries Price}\\
+\hline \\[-2.0ex]
+\endhead %% end column labels
+
+\\\hline %% start footer
+\multicolumn{4}{r}{{Continued on next page...}} \\
+\endfoot %% end footer
+\\[-5.0ex]\hline \\[-6.5ex]
+\endlastfoot %% prevents footer on last page
+
+
+\DTLforeach{items} {% for each in csv
+\first=product, \second=quantity, %spacing important
+\third=uprice, \fourth=price} {%
+% start new row}
+\first & \second & \third & \fourth \\} %% csv entries
+\end{xltabular} % end table
+
+\begin{xltabular}{\textwidth}{  %% total table
+    >{\raggedright\arraybackslash}  B 
+    >{\centering\arraybackslash}    N
+    >{\raggedleft\arraybackslash}   M
+}
+     &  Subtotal:       & @subtotal \\
+     &  Total Tax:      & @taxtotal \\ \\[-2.0ex]
+     \hline \\[-2.0ex] %% make this line bolded like others[p]
+     & \bfseries Total: & \bf\$ @total\\ \\
+\end{xltabular}
+\centering \large \bfseries {Thank you for your purchase!}
+
+\renewcommand{\arraystretch}{1}
+\AtEndDocument{\vfill%
+  \paymentbox{\begin{minipage}{7in}
+\Large\bfseries{PAYMENT ADVICE} \\
+\raggedleft\arraybackslash\begin{tabular}{l}
+        \\
+        [-.5ex] \small\bfseries{  TO:} Ansync, Inc. \\
+        \small\normalfont\businessaddress\\
+        [-.5ex] \small\normalfont      \businesssuite\\ % should be \date \\ 
+        [-.5ex] \small\normalfont     \businesscity{} \\
+        [-.5ex] \small\normalfont     UNITED STATES{} \\
+    \end{tabular}
+    \quad
+    \hfill
+    \begin{tabular}{r}
+        \footnotesize \\
+        [-1ex] \small\bfseries{Customer:}  \\
+        [-1ex] \small\normalfont \customername \\
+        [-.8ex] \small\bfseries{Invoice Date:} \\ 
+        [-1ex] \small\normalfont \duedate \\
+        [-0.8ex] \small\bf  Invoice Number: \\
+        [-1ex] \small\normalfont\invoicenumber{} \\
+        [-0.6ex] \small\bf  Amount Enclosed: \rule{2.2cm}{0.5pt}\\  
+    \end{tabular}
+
+
+\end{minipage}
+}}
+
+
+\end{document} % end doc

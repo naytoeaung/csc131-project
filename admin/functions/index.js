@@ -45,7 +45,7 @@ async function updateAll() {
  * Adds a random sample document for testing
  */
 exports.addSample = onRequest(async (req, res) => {
-    const document = sampleInvoice();
+    const document = sampleInvoice(req.query.template || "invoiceSimple");
     const result = await db.collection('data').add(document);
     logger.log(`Added Sample Document - ID: ${result.id}`);
     res.json({id: result.id, document: document});

@@ -16,10 +16,10 @@ function rand(min, max, precision=1) {
 }
 
 /**
- * Sample data for invoice2 template (with csv data)
+ * Sample data for invoiceSimple template
  * @returns {object} data to be put in firestore
  */
-function sampleInvoice(email=true) {
+function sampleInvoice(template, email=true) {
     let items = []
     let total = 0;
     for (let i = 0; i < 100; i++) {
@@ -28,22 +28,32 @@ function sampleInvoice(email=true) {
         let uprice = rand(0.25, 5.00, 0.01);
         let amount = (quantity * uprice);
         total += amount;
-        items.push({
-            "Product": name,
-            "Quantity": quantity,
-            "Uprice": uprice.toFixed(2),
-            "Price": amount.toFixed(2),
-        });
+        let item = {
+            "product": name,
+            "quantity": quantity,
+            "uprice": uprice.toFixed(2),
+            "tax": Math.random() < 0.2 ? "Tax Exempt" : "7.25\\%",
+            "price": amount.toFixed(2),
+        };
+        items.push(item);
     }
 
     let result = {
-        template: "invoice2",
+        template: template,
         run: true,
         invoicex: rand(1000, 9999),
         refname: "Zurg 2.0",
+        subtotal: total.toFixed(2),
+        taxtotal: (total * 0.0725).toFixed(2),
+        total: (total * 1.0725).toFixed(2),
+        customer: "Evil, inc.",
+        duedate: "January 1, 2024",
         csv: {
-            "sampletxt.csv": items
+            "data.csv": items
         }
+    }
+    if (template === "invoiceCustom") {
+        result.label = ["product", "quantity", "uprice", "tax", "price"];
     }
     if (email) {
         result.email = {
