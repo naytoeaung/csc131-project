@@ -1,128 +1,82 @@
-require('dotenv').config();
-
 // functions imports
 const {onRequest} = require("firebase-functions/v2/https");
 const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 
 // firebase setup
-const {initializeApp} = require("firebase-admin/app");
-const {getFirestore} = require("firebase-admin/firestore");
-const {getStorage, getDownloadURL} = require("firebase-admin/storage")
+const {db, storage} = require('./setup.js').getFirebase();
 
-const app = initializeApp({
-    storageBucket: 'csc-131-a8d6a.appspot.com'
-});
-const db = getFirestore();
-const storage = getStorage();
+const {sampleInvoice} = require("./sample.js");
+const {Document} = require("./document.js");
 
-const fs = require('fs')
-const {Parser} = require("../fill.js");
-const {setUp, generateExec, cleanUp} = require("../generate.js");
-const {sampleDocument, sampleDocument2} = require("../sample.js");
-const {initProcess, Processor} = require("../process.js");
-initProcess(app);
-
-async function newOnUpdate(documentId, data) {
+/**
+ * When functions detects a new or updated document, it calls this function to check if
+ * it needs processing and to initiate processing if so.
+ * @param {*} documentId The id of the document
+ * @param {*} data The data contained at the time of the function call
+ */
+async function updateDocument(documentId, data) {
     if (data.run) {
         logger.log(`Detected change to document ${documentId} (beginning process)`);
-        const processor = new Processor(documentId, {data: data, logger: logger.log, cloud: false});
-        processor.process();
+        const doc = new Document(documentId, {data: data, logger: logger.log});
+        doc.process();
     } else {
         logger.log(`Detected change to document ${documentId} (no update needed)`);
     }
 }
 
-async function onUpdate(document, data) {
-    if (data.run) {
-        logger.log("updating " + document);
-        await db.collection('data').doc(document).update({run: false});
-        
-        // 2. download template from storage
-        setUp();
-        await downloadFolder(`templates/${data.template}`, 'tmp');
-        const template = fs.readFileSync('tmp/template.tex', 'utf8');
-
-        // 3. fill in template
-        const parser = new Parser(template, data);
-        const newLatex = parser.parse();
-
-        // 4. convert to pdf
-        const result = generateExec(newLatex);
-
-        // 5. upload pdf to storage
-        const resultPath = `documents/${document}.pdf`;
-        await uploadFile(result, resultPath);
-
-        // 6. update firestore with generation info
-        let url;
-        try {
-            url = await getDownloadURL(storage.bucket().file(resultPath));
-        } catch (error) {
-            logger.log(error);
-            url = `gs://${storage.bucket().name}.appspot.com/${resultPath}`;
-        }
-
-        cleanUp();
-
-        await db.collection('data').doc(document).update({generated: true, url: url});
-    } else {
-        logger.log("detected change to " + document + ", no run needed");
+/**
+ * Checks all old documents to see if there are any that were missed by functions
+ * e.g. because functions were down when the document was added
+ * Runs all documents that still have the run field set to true
+ */
+async function updateAll() {
+    const query = db.collection('data').where('run', '==', true);
+    const result = await query.get();
+    for (i in result.docs) {
+        const id = result.docs[i].id
+        logger.log(`Found existing document that needs to run: ${id}`);
+        // const doc = new Document(id, {logger: logger.log});
+        // doc.process();
     }
 }
 
-exports.addsample = onRequest(async (req, res) => {
-    const document = sampleDocument2();
+/**
+ * Adds a random sample document for testing
+ */
+exports.addSample = onRequest(async (req, res) => {
+    const document = sampleInvoice(req.query.template || "invoiceSimple");
     const result = await db.collection('data').add(document);
-    logger.log(`added document ID: ${result.id} invoiceNum: ${document.invoicex}`);
-    res.json({result: `added document ID: ${result.id} invoiceNum: ${document.invoicex}`, document: document});
+    logger.log(`Added Sample Document - ID: ${result.id}`);
+    res.json({id: result.id, document: document});
 });
 
-exports.oncreate = onDocumentCreated("data/{documentId}", async (event) => {
+/**
+ * Adds a document specified in the request body
+ */
+exports.addDocument = onRequest(async (req, res) => {
+    const document = req.body;
+    const result = await db.collection('data').add(document);
+    logger.log(`Added New Document - ID: ${result.id}`);
+    res.json({id: result.id, document: document});
+});
+
+/**
+ * Runs when cloud functions detects a new document has been added
+ */
+exports.onCreate = onDocumentCreated("data/{documentId}", async (event) => {
     const document = event.params.documentId;
     const data = event.data.data();
-    await newOnUpdate(document, data);
+    await updateDocument(document, data);
+    await updateAll(); // check old documents to see if they need updating too
 });
 
-exports.onupdate = onDocumentUpdated("data/{documentId}", async (event) => {
+/**
+ * Runs when cloud functions detects a document has been updated
+ */
+exports.onUpdate = onDocumentUpdated("data/{documentId}", async (event) => {
     const document = event.params.documentId;
     const data = event.data.after.data();
-    await newOnUpdate(document, data);
+    await updateDocument(document, data);
+    await updateAll(); // check old documents to see if they need updating too
 });
-
-
-
-
-/**
- * Downloads a file from cloud storage to local storage
- * @param {*} path - the location in cloud storage to download
- * @param {*} output - the location in local storage to save to
- */
-async function downloadFile(path, output) {
-    await storage.bucket().file(path).download({destination: output});
-}
-
-/**
- * Downloads all files from a folder in cloud storage to local storage
- * @param {*} path - the folder in cloud storage to download
- * @param {*} output - the location in local storage to save to
- */
-async function downloadFolder(path, output) {
-    const files = await storage.bucket().getFiles({ prefix: path + '/', autoPaginate: false });
-    // logger.log(files[0]);
-    await Promise.all(files[0].map(async (file) => {
-        // logger.log(file.name);
-        let trimmedPath = file.name.split('/').at(-1);
-        if (trimmedPath == '') return;
-        await file.download({destination: output + '/' + trimmedPath});
-    }));
-}
-
-/**
- * Uploads a file from local storage to cloud storage
- * @param {} path - the file to upload to the cloud
- * @param {*} output - the location in cloud storage to save to
- */
-async function uploadFile(path, output) {
-    await storage.bucket().upload(path, {destination: output})
-}

@@ -28,10 +28,18 @@ class Parser {
      */
     parse() {
         let result = '';
+        let ignore = false;
         this.i = 0;
         while (this.i < this.latex.length) {
             let char = this.latex[this.i];
             this.i++;
+            if (ignore) {
+                result += char;
+                ignore = false;
+                continue;
+            }
+            if (char == '\\')
+                ignore = true;
             if (char == '@')
                 result += this.interpret(); // when it finds @, interpret from that point
             else

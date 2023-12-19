@@ -1,47 +1,38 @@
-# How to use this code
+# How to set up this code with your own Firebase project
 
-## 1. Pulling Code from GitHub
-You would probably need to watch a tutorial if you don't have git set up
+## 1. Authentication
+### Firebase
+- Update the .firebaserc file with your project's id
+- Download a private key in firebase settings > service accounts
+  - Save it under `functions/credential.json`
+- In the functions folder, create a .env file
+  - Add `GOOGLE_APPLICATION_CREDENTIALS="credential.json"`
+  - Add `STORAGE_BUCKET="[your sotrage bucket].appspot.com"`
+### DynamicDocs
+- Create a [DynamicDocs](https://advicement.io/dynamic-documents-api/dashboard) account and create an API key
+- To the .env file, add `DYNAMIC_DOCS_TOKEN="[your token]"`
+### SendGrid
+- Create a [SendGrid](https://sendgrid.com/en-us/pricing) account and create an API key
+- To the .env file, add:
+  - `SENDGRID_API_KEY="[your api key]"`
+  - `SENDGRID_EMAIL="[your sender email]"`
+  - `SAMPLE_EMAIL="[sample email for testing]"`
+    - This is only used in testing as a "to" address
 
-## 2. Authentication
-- Go to firebase settings > service accounts
-- Download a new private key
-- Create the file ".env" in the admin folder
-- In the file, add the line `GOOGLE_APPLICATION_CREDENTIALS="path"`
-- Put the full path to the file you downloaded in the string
+## 2. Deploy Functions
+- Run `cd functions` to change to the functions directory
+- Run `npm install` to download all dependencies
+- Run `firebase deploy --only functions`
 
-## 3. Storage Bucket
-- Open storage in firebase and create a bucket
-- In your .env file, add a new line `STORAGE_BUCKET="[your bucket name].appspot.com"`
-- Your bucket's name is in the gs:// link at the top of the bucket in firebase
-- In Cloud Storage: Add a folder called "templates", and a sub-folder in templates called "invoice"
-- In the invoice folder, upload template.tex and ansync.jpg, which can be found in the github
-### Sample Storage Format
+## 3. Use Our Default Templates
+All of our pre-made templates can be found under the templates and emailTemplates folders. These can be edited for your specific needs. Add these templates to Cloud Storage in the following format:
 ```
 templates/
-    invoice/
+    invoiceSimple/
         template.tex
         ansync.jpg
-documents/
-   abc.pdf
-   efg.pdf
+emailTemplates/
+    invoice/
+        template.html
 ```
-
-## 4. Set up pdflatex
-- We aren't using DynamicDocs yet, meaning the command line tool pdflatex needs to be installed first.
-- Download it here: https://www.latex-project.org/get/#tex-distributions
-
-## 5. Running
-- Run `node admin/app.js` to run the code
-- Or run `cd admin` first to switch to the admin folder, then run `node app.js`
-- The code will automatically add random sample data to firestore, then generate a PDF from this data
-- The console will not show a response (for now), but you can find the PDF in the storage bucket
-
-## 6. Editing Code
-- `app.js`: the main program
-- `fill.js`: takes latex template and fills in @ symbols with data
-- `generate.js`: takes completed latex code and converts to pdf
-- `sample.js`: generates random sample data to put in firestore for testing
-### Ignore
-- `functions.js`: unfinished implementation of cloud functions
-- `test.js`: unused code for running some tests
+the file `sample.js` contains randomized firestore data to give you an idea of how firestore should be formatted to run the document.

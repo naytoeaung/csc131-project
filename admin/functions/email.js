@@ -1,4 +1,5 @@
-const sgMail = require('@sendgrid/mail')
+const sgMail = require('@sendgrid/mail');
+const { Parser } = require('./fill.js');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
@@ -12,6 +13,7 @@ async function sendEmail(buffer, information) {
       from: process.env.SENDGRID_EMAIL,
       subject: information.subject,
       text: information.text,
+      html: information.html,
       attachments: [
         {
           content: buffer.toString('base64'),
